@@ -6,6 +6,7 @@ using System;
 using System.ClientModel.Primitives;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -36,7 +37,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(StreamingResponseErrorUpdate)} does not support writing '{options.Format}' format.");
             }
@@ -77,7 +78,7 @@ namespace OpenAI.Responses
                 writer.WritePropertyName("code"u8);
                 writer.WriteStringValue(Code);
             }
-            else
+            else if (!Patch.Contains("$.code"u8))
             {
                 writer.WriteNull("code"u8);
             }
@@ -91,7 +92,7 @@ namespace OpenAI.Responses
                 writer.WritePropertyName("param"u8);
                 writer.WriteStringValue(Param);
             }
-            else
+            else if (!Patch.Contains("$.param"u8))
             {
                 writer.WriteNull("param"u8);
             }

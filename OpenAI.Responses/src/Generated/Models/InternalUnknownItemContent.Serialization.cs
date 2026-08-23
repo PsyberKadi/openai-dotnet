@@ -6,12 +6,13 @@ using System;
 using System.ClientModel.Primitives;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     internal partial class InternalUnknownItemContent : ResponseContentPart, IJsonModel<ResponseContentPart>
     {
-        internal InternalUnknownItemContent() : this(default, default)
+        public InternalUnknownItemContent() : this(default, default)
         {
         }
 
@@ -36,7 +37,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(ResponseContentPart)} does not support writing '{options.Format}' format.");
             }

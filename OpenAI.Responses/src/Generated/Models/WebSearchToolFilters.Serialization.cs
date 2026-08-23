@@ -7,6 +7,7 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -33,7 +34,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(WebSearchToolFilters)} does not support writing '{options.Format}' format.");
             }
@@ -73,7 +74,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.allowed_domains"u8))
                 {
                     writer.WritePropertyName("allowed_domains"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.allowed_domains"u8));
+                    Patch.WriteTo(writer, "$.allowed_domains"u8);
                 }
             }
             else if (Optional.IsCollectionDefined(AllowedDomains))

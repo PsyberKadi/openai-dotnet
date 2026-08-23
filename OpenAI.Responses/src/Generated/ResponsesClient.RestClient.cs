@@ -5,6 +5,7 @@
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Collections.Generic;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -40,7 +41,11 @@ namespace OpenAI.Responses
             {
                 foreach (var @param in include)
                 {
-                    uri.AppendQuery("include[]", @param.ToString(), true);
+                    string paramStr = @param.ToString();
+                    if (paramStr != null)
+                    {
+                        uri.AppendQuery("include[]", paramStr, true);
+                    }
                 }
             }
             if (stream != null)

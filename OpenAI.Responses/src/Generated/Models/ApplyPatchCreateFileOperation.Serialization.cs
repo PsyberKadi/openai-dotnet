@@ -6,12 +6,13 @@ using System;
 using System.ClientModel.Primitives;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     public partial class ApplyPatchCreateFileOperation : ApplyPatchOperation, IJsonModel<ApplyPatchCreateFileOperation>
     {
-        internal ApplyPatchCreateFileOperation() : this(InternalApplyPatchOperationType.CreateFile, default, null, null)
+        public ApplyPatchCreateFileOperation() : this(InternalApplyPatchOperationType.CreateFile, default, null, null)
         {
         }
 
@@ -36,7 +37,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(ApplyPatchCreateFileOperation)} does not support writing '{options.Format}' format.");
             }

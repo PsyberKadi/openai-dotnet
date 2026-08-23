@@ -9,6 +9,8 @@ namespace OpenAI.Responses;
 // - Added Experimental attribute.
 // - Renamed.
 [CodeGenType("ItemResource")]
+[CodeGenVisibility(nameof(ResponseItem), CodeGenVisibility.ProtectedInternal, typeof(ResponseItemKind))]
+[CodeGenVisibility(nameof(Kind), CodeGenVisibility.Public)]
 public partial class ResponseItem
 {
     // CUSTOM: Added setter because this is required in output scenarios and optional in input scenarios.
@@ -70,13 +72,13 @@ public partial class ResponseItem
             ]);
     }
 
-    [Experimental("OPENAICUA001")]
+    [Experimental("OPENAI001")]
     public static ComputerCallResponseItem CreateComputerCallItem(string callId, ComputerCallAction action, IEnumerable<ComputerCallSafetyCheck> pendingSafetyChecks)
     {
         return new ComputerCallResponseItem(callId, action, pendingSafetyChecks);
     }
 
-    [Experimental("OPENAICUA001")]
+    [Experimental("OPENAI001")]
     public static ComputerCallOutputResponseItem CreateComputerCallOutputItem(string callId, ComputerCallOutput output)
     {
         return new ComputerCallOutputResponseItem(callId, output);

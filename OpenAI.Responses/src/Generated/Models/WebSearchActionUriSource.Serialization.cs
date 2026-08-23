@@ -6,12 +6,13 @@ using System;
 using System.ClientModel.Primitives;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     public partial class WebSearchActionUriSource : WebSearchActionSource, IJsonModel<WebSearchActionUriSource>
     {
-        internal WebSearchActionUriSource() : this(InternalWebSearchActionSearchSourcesType.Url, default, null)
+        public WebSearchActionUriSource() : this(InternalWebSearchActionSearchSourcesType.Url, default, null)
         {
         }
 
@@ -36,7 +37,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(WebSearchActionUriSource)} does not support writing '{options.Format}' format.");
             }

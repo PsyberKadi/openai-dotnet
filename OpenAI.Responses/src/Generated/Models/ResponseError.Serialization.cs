@@ -6,12 +6,13 @@ using System;
 using System.ClientModel.Primitives;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     public partial class ResponseError : IJsonModel<ResponseError>
     {
-        internal ResponseError()
+        public ResponseError()
         {
         }
 
@@ -36,7 +37,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(ResponseError)} does not support writing '{options.Format}' format.");
             }
@@ -86,7 +87,7 @@ namespace OpenAI.Responses
                 writer.WritePropertyName("param"u8);
                 writer.WriteStringValue(Param);
             }
-            else
+            else if (!Patch.Contains("$.param"u8))
             {
                 writer.WriteNull("param"u8);
             }

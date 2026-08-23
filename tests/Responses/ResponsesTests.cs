@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace OpenAI.Tests.Responses;
 
-#pragma warning disable OPENAICUA001
+#pragma warning disable OPENAI001
 
 [Category("Responses")]
 public partial class ResponsesTests : OpenAIRecordedTestBase
@@ -274,7 +274,6 @@ public partial class ResponsesTests : OpenAIRecordedTestBase
 
     [RecordedTest]
     [TestCase("gpt-4o-mini")]
-    [TestCase("computer-use-preview")]
     public async Task ResponsesHelloWorldWithTool(string model)
     {
         ResponsesClient client = GetProxiedResponsesClient();
@@ -327,12 +326,12 @@ public partial class ResponsesTests : OpenAIRecordedTestBase
     {
         ResponsesClient client = GetProxiedResponsesClient();
 
-        CreateResponseOptions options = new("gpt-5", [ResponseItem.CreateUserMessageItem("What's the best way to fold a burrito?")])
+        CreateResponseOptions options = new("gpt-5.6", [ResponseItem.CreateUserMessageItem("What's the best way to fold a burrito?")])
         {
             ReasoningOptions = new()
             {
                 ReasoningSummaryVerbosity = ResponseReasoningSummaryVerbosity.Detailed,
-                ReasoningEffortLevel = ResponseReasoningEffortLevel.Low,
+                ReasoningEffortLevel = ResponseReasoningEffortLevel.ExtraHigh,
             },
             Instructions = "Perform reasoning over any questions asked by the user.",
         };
@@ -341,6 +340,8 @@ public partial class ResponsesTests : OpenAIRecordedTestBase
         Assert.That(response, Is.Not.Null);
         Assert.That(response.Id, Is.Not.Null);
         Assert.That(response.OutputItems, Has.Count.EqualTo(2));
+        Assert.That(response.ReasoningOptions, Is.Not.Null);
+        Assert.That(response.ReasoningOptions.ReasoningEffortLevel, Is.EqualTo(ResponseReasoningEffortLevel.ExtraHigh));
 
         ReasoningResponseItem reasoningItem = response.OutputItems[0] as ReasoningResponseItem;
         MessageResponseItem messageItem = response.OutputItems[1] as MessageResponseItem;
@@ -349,6 +350,27 @@ public partial class ResponsesTests : OpenAIRecordedTestBase
         Assert.That(reasoningItem.GetSummaryText(), Is.Not.Null.And.Not.Empty);
         Assert.That(reasoningItem.Id, Is.Not.Null.And.Not.Empty);
         Assert.That(messageItem.Content?.FirstOrDefault().Text, Has.Length.GreaterThan(0));
+    }
+
+    [RecordedTest]
+    public async Task ResponsesWithPromptCache()
+    {
+        string expectedPromptCacheKey = "test-prompt-cache-key";
+        ResponsePromptCacheRetentionPolicy expectedPromptCacheRetentionPolicy = ResponsePromptCacheRetentionPolicy.Max24Hours;
+
+        ResponsesClient client = GetProxiedResponsesClient();
+
+        CreateResponseOptions options = new("gpt-5.5", [ResponseItem.CreateUserMessageItem("Hello, world!")])
+        {
+            PromptCacheKey = expectedPromptCacheKey,
+            PromptCacheRetentionPolicy = expectedPromptCacheRetentionPolicy,
+        };
+
+        ResponseResult response = await client.CreateResponseAsync(options);
+        Assert.That(response, Is.Not.Null);
+        Assert.That(response.Id, Is.Not.Null);
+        Assert.That(response.PromptCacheKey, Is.EqualTo(expectedPromptCacheKey));
+        Assert.That(response.PromptCacheRetentionPolicy, Is.EqualTo(expectedPromptCacheRetentionPolicy));
     }
 
     [RecordedTest]
@@ -381,7 +403,6 @@ public partial class ResponsesTests : OpenAIRecordedTestBase
     }
 
     [RecordedTest]
-    [TestCase("computer-use-preview-2025-03-11")]
     [TestCase("gpt-4o-mini")]
     public async Task HelloWorldStreaming(string model)
     {
@@ -444,57 +465,68 @@ public partial class ResponsesTests : OpenAIRecordedTestBase
     public async Task ResponseUsingConversations()
     {
         ConversationClient conversationClient = GetProxiedOpenAIClient<ConversationClient>();
+        ResponsesClient responsesClient = GetProxiedResponsesClient();
+        string conversationId = null;
 
-        BinaryData createConversationParameters = BinaryData.FromBytes("""
+        string expectedSystemMessage = "You are a helpful assistant.";
+        string expectedUserMessage = "Tell me a joke.";
+
+        try
+        {
+            // Create a conversation with an initial system message.
+            MessageResponseItem initialConversationItem = ResponseItem.CreateSystemMessageItem(expectedSystemMessage);
+            ConversationCreationOptions createConversationOptions = new()
             {
-               "metadata": { "topic": "test" },
-               "items": [
-                   {
-                       "type": "message",
-                       "role": "user",
-                       "content": "tell me a joke"
-                   }
-               ]
-            }
-            """u8.ToArray());
+                Metadata = { ["topic"] = "test" },
+                Items = { initialConversationItem },
+            };
 
-        using BinaryContent requestContent = BinaryContent.Create(createConversationParameters);
-        var conversationResult = await conversationClient.CreateConversationAsync(requestContent);
-        using JsonDocument conversationResultAsJson = JsonDocument.Parse(conversationResult.GetRawResponse().Content.ToString());
-        string conversationId = conversationResultAsJson.RootElement.GetProperty("id"u8).GetString();
+            ClientResult<ConversationResource> conversationResult = await conversationClient.CreateConversationAsync(createConversationOptions);
+            ConversationResource conversation = conversationResult.Value;
+            conversationId = conversation.Id;
+            Assert.That(conversation.Metadata["topic"], Is.EqualTo("test"));
 
-        ResponsesClient client = GetProxiedResponsesClient();
-        ResponseResult response = await client.CreateResponseAsync(
-            new CreateResponseOptions("gpt-4.1", [ResponseItem.CreateUserMessageItem("tell me another")])
+            // Create a response using the conversation by adding a new user message.
+            CreateResponseOptions firstTurnOptions = new CreateResponseOptions(TestModel.Responses, [ResponseItem.CreateUserMessageItem(expectedUserMessage)])
             {
                 ConversationOptions = new(conversationId),
-            });
+            };
 
-        Assert.That(response, Is.Not.Null);
-        Assert.That(response.ConversationOptions.ConversationId, Is.EqualTo(conversationId));
+            ResponseResult response = await responsesClient.CreateResponseAsync(firstTurnOptions);
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.ConversationOptions.ConversationId, Is.EqualTo(conversationId));
 
-        var conversationResults = conversationClient.GetConversationItemsAsync(conversationId);
-        var conversationItems = new List<JsonElement>();
-        await foreach (ClientResult result in conversationResults.GetRawPagesAsync())
-        {
-            using JsonDocument getConversationItemsResultAsJson = JsonDocument.Parse(result.GetRawResponse().Content.ToString());
-            foreach (JsonElement element in getConversationItemsResultAsJson.RootElement.GetProperty("data").EnumerateArray())
+            // Validate that the conversation now contains three items: the initial system message, the user message, and the model's response.
+            AsyncCollectionResult conversationItemsResult = conversationClient.GetConversationItemsAsync(conversationId);
+            List<JsonElement> conversationItems = new();
+            await foreach (ClientResult result in conversationItemsResult.GetRawPagesAsync())
             {
-                conversationItems.Add(element.Clone());
+                using JsonDocument getConversationItemsResultAsJson = JsonDocument.Parse(result.GetRawResponse().Content.ToString());
+                foreach (JsonElement element in getConversationItemsResultAsJson.RootElement.GetProperty("data").EnumerateArray())
+                {
+                    conversationItems.Add(element.Clone());
+                }
+            }
+
+            Assert.That(conversationItems, Is.Not.Null.Or.Empty);
+            Assert.That(conversationItems.Count, Is.EqualTo(3));
+
+            string GetContentText(JsonElement item) => item.GetProperty("content")[0].GetProperty("text").GetString();
+            string GetRole(JsonElement item) => item.GetProperty("role").GetString();
+
+            Assert.That(GetRole(conversationItems[2]), Is.EqualTo("system"));
+            Assert.That(GetContentText(conversationItems[2]), Is.EqualTo(expectedSystemMessage));
+            Assert.That(GetRole(conversationItems[1]), Is.EqualTo("user"));
+            Assert.That(GetContentText(conversationItems[1]), Is.EqualTo(expectedUserMessage));
+            Assert.That(GetRole(conversationItems[0]), Is.EqualTo("assistant"));
+        }
+        finally
+        {
+            if (conversationId is not null)
+            {
+                await conversationClient.DeleteConversationAsync(conversationId);
             }
         }
-
-        Assert.That(conversationItems, Is.Not.Empty, "Expected the conversation to contain items.");
-        Assert.That(conversationItems.Count, Is.GreaterThanOrEqualTo(2));
-
-        var lastItem = conversationItems[conversationItems.Count - 1];
-        var secondLastItem = conversationItems[conversationItems.Count - 2];
-
-        string GetContentText(JsonElement item) =>
-            item.GetProperty("content")[0].GetProperty("text").GetString();
-
-        Assert.That(GetContentText(lastItem), Is.EqualTo("tell me a joke"));
-        Assert.That(GetContentText(secondLastItem), Is.EqualTo("tell me another"));
     }
 
     [RecordedTest]

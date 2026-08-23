@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json.Serialization;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -42,7 +43,7 @@ namespace OpenAI.Responses
         [Experimental("SCME0001")]
         public ref JsonPatch Patch => ref _patch;
 
-        public string Kind { get; } = "exec";
+        public string Kind { get; set; } = "exec";
 
         public IList<string> Command { get; }
 

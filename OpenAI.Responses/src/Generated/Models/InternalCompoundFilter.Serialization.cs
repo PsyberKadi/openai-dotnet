@@ -7,12 +7,13 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     internal partial class InternalCompoundFilter : IJsonModel<InternalCompoundFilter>
     {
-        internal InternalCompoundFilter() : this(default, null, default)
+        public InternalCompoundFilter() : this(default, null, default)
         {
         }
 
@@ -37,7 +38,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(InternalCompoundFilter)} does not support writing '{options.Format}' format.");
             }
@@ -82,7 +83,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.filters"u8))
                 {
                     writer.WritePropertyName("filters"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.filters"u8));
+                    Patch.WriteTo(writer, "$.filters"u8);
                 }
             }
             else

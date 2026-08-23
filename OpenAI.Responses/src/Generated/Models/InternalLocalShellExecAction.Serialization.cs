@@ -7,12 +7,13 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     internal partial class InternalLocalShellExecAction : IJsonModel<InternalLocalShellExecAction>
     {
-        internal InternalLocalShellExecAction() : this(null, null, default, null, null, null, default)
+        public InternalLocalShellExecAction() : this(null, null, default, null, null, null, default)
         {
         }
 
@@ -37,7 +38,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(InternalLocalShellExecAction)} does not support writing '{options.Format}' format.");
             }
@@ -82,7 +83,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.command"u8))
                 {
                     writer.WritePropertyName("command"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.command"u8));
+                    Patch.WriteTo(writer, "$.command"u8);
                 }
             }
             else

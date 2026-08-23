@@ -6,10 +6,11 @@ using System.ClientModel.Primitives;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
-    [Experimental("OPENAICUA001")]
+    [Experimental("OPENAI001")]
     public partial class ComputerCallSafetyCheck
     {
         [Experimental("SCME0001")]

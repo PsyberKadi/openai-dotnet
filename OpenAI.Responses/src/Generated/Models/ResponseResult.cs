@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json.Serialization;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -36,7 +37,7 @@ namespace OpenAI.Responses
         }
 
 #pragma warning disable SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
-        internal ResponseResult(IDictionary<string, string> metadata, float? temperature, int? topLogProbabilityCount, float? topP, string endUserId, string safetyIdentifier, ResponseServiceTier? serviceTier, string previousResponseId, string model, ResponseReasoningOptions reasoningOptions, bool? backgroundModeEnabled, int? maxOutputTokenCount, int? maxToolCallCount, ResponseTextOptions textOptions, IList<ResponseTool> tools, ResponseToolChoice toolChoice, ResponseTruncationMode? truncationMode, string id, string @object, ResponseStatus? status, DateTimeOffset createdAt, ResponseError error, ResponseIncompleteStatusDetails incompleteStatusDetails, IList<ResponseItem> outputItems, IList<ResponseItem> instructions, ResponseTokenUsage usage, bool parallelToolCallsEnabled, ResponseConversationOptions conversationOptions, in JsonPatch patch)
+        internal ResponseResult(IDictionary<string, string> metadata, float? temperature, int? topLogProbabilityCount, float? topP, string endUserId, string safetyIdentifier, ResponseServiceTier? serviceTier, string previousResponseId, string model, ResponseReasoningOptions reasoningOptions, bool? backgroundModeEnabled, int? maxOutputTokenCount, int? maxToolCallCount, ResponseTextOptions textOptions, IList<ResponseTool> tools, ResponseToolChoice toolChoice, ResponseTruncationMode? truncationMode, string id, string @object, ResponseStatus? status, DateTimeOffset createdAt, ResponseError error, ResponseIncompleteStatusDetails incompleteStatusDetails, IList<ResponseItem> outputItems, IList<ResponseItem> instructions, ResponseTokenUsage usage, bool parallelToolCallsEnabled, ResponseConversationOptions conversationOptions, string promptCacheKey, ResponsePromptCacheRetentionPolicy? promptCacheRetentionPolicy, in JsonPatch patch)
         {
             // Plugin customization: ensure initialization of collections
             Metadata = metadata ?? new ChangeTrackingDictionary<string, string>();
@@ -67,6 +68,8 @@ namespace OpenAI.Responses
             Usage = usage;
             ParallelToolCallsEnabled = parallelToolCallsEnabled;
             ConversationOptions = conversationOptions;
+            PromptCacheKey = promptCacheKey;
+            PromptCacheRetentionPolicy = promptCacheRetentionPolicy;
             _patch = patch;
             _patch.SetPropagators(PropagateSet, PropagateGet);
         }
@@ -102,5 +105,9 @@ namespace OpenAI.Responses
         public ResponseError Error { get; set; }
 
         public ResponseTokenUsage Usage { get; set; }
+
+        public string PromptCacheKey { get; set; }
+
+        public ResponsePromptCacheRetentionPolicy? PromptCacheRetentionPolicy { get; set; }
     }
 }

@@ -7,12 +7,13 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     public partial class GetResponseOptions : IJsonModel<GetResponseOptions>
     {
-        internal GetResponseOptions() : this(null, default, default, null, default, default)
+        public GetResponseOptions() : this(null, default, default, null, default, default)
         {
         }
 
@@ -37,7 +38,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(GetResponseOptions)} does not support writing '{options.Format}' format.");
             }

@@ -6,12 +6,13 @@ using System;
 using System.ClientModel.Primitives;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     public partial class UriCitationMessageAnnotation : ResponseMessageAnnotation, IJsonModel<UriCitationMessageAnnotation>
     {
-        internal UriCitationMessageAnnotation() : this(ResponseMessageAnnotationKind.UriCitation, default, null, default, default, null)
+        public UriCitationMessageAnnotation() : this(ResponseMessageAnnotationKind.UriCitation, default, null, default, default, null)
         {
         }
 
@@ -36,7 +37,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(UriCitationMessageAnnotation)} does not support writing '{options.Format}' format.");
             }

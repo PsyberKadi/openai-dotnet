@@ -7,6 +7,7 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -33,7 +34,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(AutomaticCodeInterpreterToolContainerConfiguration)} does not support writing '{options.Format}' format.");
             }
@@ -74,7 +75,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.file_ids"u8))
                 {
                     writer.WritePropertyName("file_ids"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.file_ids"u8));
+                    Patch.WriteTo(writer, "$.file_ids"u8);
                 }
             }
             else if (Optional.IsCollectionDefined(FileIds))

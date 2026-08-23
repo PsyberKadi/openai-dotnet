@@ -7,12 +7,13 @@ using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     internal partial class InternalTokenCountsResource : IJsonModel<InternalTokenCountsResource>
     {
-        internal InternalTokenCountsResource()
+        public InternalTokenCountsResource()
         {
         }
 
@@ -37,7 +38,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(InternalTokenCountsResource)} does not support writing '{options.Format}' format.");
             }

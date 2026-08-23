@@ -7,12 +7,13 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     internal partial class InternalComputerActionDrag : ComputerCallAction, IJsonModel<InternalComputerActionDrag>
     {
-        internal InternalComputerActionDrag() : this(ComputerCallActionKind.Drag, default, null)
+        public InternalComputerActionDrag() : this(ComputerCallActionKind.Drag, default, null)
         {
         }
 
@@ -37,7 +38,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(InternalComputerActionDrag)} does not support writing '{options.Format}' format.");
             }
@@ -78,7 +79,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.path"u8))
                 {
                     writer.WritePropertyName("path"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.path"u8));
+                    Patch.WriteTo(writer, "$.path"u8);
                 }
             }
             else
@@ -157,6 +158,10 @@ namespace OpenAI.Responses
             {
                 int propertyLength = "path"u8.Length;
                 ReadOnlySpan<byte> currentSlice = local.Slice(propertyLength);
+                if (currentSlice.IsEmpty)
+                {
+                    return TryResolvePathArray(out value);
+                }
                 if (!currentSlice.TryGetIndex(out int index, out int bytesConsumed))
                 {
                     return false;
@@ -184,6 +189,34 @@ namespace OpenAI.Responses
                 return true;
             }
             return false;
+        }
+#pragma warning restore SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+
+#pragma warning disable SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+        private bool TryResolvePathArray(out JsonPatch.EncodedValue value)
+        {
+            value = default;
+            BinaryData data = ModelReaderWriter.Write(ActivePath(), ModelReaderWriterOptions.Json, OpenAIContext.Default);
+            JsonPatch tempPatch = new JsonPatch();
+            tempPatch.Set("$"u8, data.ToMemory().Span);
+            return tempPatch.TryGetEncodedValue("$"u8, out value);
+        }
+#pragma warning restore SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+
+#pragma warning disable SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+        private IEnumerable<InternalCoordinate> ActivePath()
+        {
+            if (!Optional.IsCollectionDefined(Path))
+            {
+                yield break;
+            }
+            for (int i = 0; i < Path.Count; i++)
+            {
+                if (!Path[i].Patch.IsRemoved("$"u8))
+                {
+                    yield return Path[i];
+                }
+            }
         }
 #pragma warning restore SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
     }

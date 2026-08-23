@@ -17,7 +17,7 @@ public partial class ResponseContentPart
     public ResponseContentPartKind Kind
     {
         get => InternalType.ToString().ToResponseContentPartKind();
-        private set => InternalType = Kind.ToSerialString();
+        private set => InternalType = value.ToSerialString();
     }
 
     // CUSTOM: Exposed input text properties.
@@ -41,7 +41,7 @@ public partial class ResponseContentPart
     public IReadOnlyList<ResponseMessageAnnotation> OutputTextAnnotations => (this as InternalItemContentOutputText)?.Annotations?.ToList()?.AsReadOnly();
 
     // CUSTOM: Exposed output log probs.
-    public IReadOnlyList<ResponseTokenLogProbabilityDetails> OutputLogProbs => (this as InternalItemContentOutputText)?.Logprobs?.ToList()?.AsReadOnly();
+    public IReadOnlyList<ResponseTokenLogProbabilityDetails> OutputTextTokenLogProbabilities => (this as InternalItemContentOutputText)?.Logprobs?.ToList()?.AsReadOnly();
 
     // CUSTOM: Exposed refusal properties.
     public string Refusal => (this as InternalItemContentRefusal)?.InternalRefusal;

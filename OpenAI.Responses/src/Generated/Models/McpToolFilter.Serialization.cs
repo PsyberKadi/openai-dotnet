@@ -7,6 +7,7 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -33,7 +34,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(McpToolFilter)} does not support writing '{options.Format}' format.");
             }
@@ -73,7 +74,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.tool_names"u8))
                 {
                     writer.WritePropertyName("tool_names"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.tool_names"u8));
+                    Patch.WriteTo(writer, "$.tool_names"u8);
                 }
             }
             else if (Optional.IsCollectionDefined(ToolNames))

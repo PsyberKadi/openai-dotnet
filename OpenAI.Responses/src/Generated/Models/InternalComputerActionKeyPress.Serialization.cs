@@ -7,12 +7,13 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
     internal partial class InternalComputerActionKeyPress : ComputerCallAction, IJsonModel<InternalComputerActionKeyPress>
     {
-        internal InternalComputerActionKeyPress() : this(ComputerCallActionKind.KeyPress, default, null)
+        public InternalComputerActionKeyPress() : this(ComputerCallActionKind.KeyPress, default, null)
         {
         }
 
@@ -37,7 +38,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(InternalComputerActionKeyPress)} does not support writing '{options.Format}' format.");
             }
@@ -78,7 +79,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.keys"u8))
                 {
                     writer.WritePropertyName("keys"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.keys"u8));
+                    Patch.WriteTo(writer, "$.keys"u8);
                 }
             }
             else

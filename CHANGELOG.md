@@ -1,5 +1,223 @@
 # Release History
 
+## (Unreleased)
+
+### Acknowledgments
+
+Thank you to our developer community members who helped to make the OpenAI client library better with their contributions to this release:
+
+- Aditya Singh _([GitHub](https://github.com/adityasingh2400))_
+- JS van Dijk _([GitHub](https://github.com/hogeheer499-commits))_
+- Rohan Santhosh Kumar _([GitHub](https://github.com/Rohan5commit))_
+
+### Features Added
+
+- OpenAI.Responses:
+  - Added `ResponseReasoningContext` and exposed it through `ResponseReasoningOptions.Context`, allowing the amount of reasoning context preserved across turns to be controlled with `Auto`, `CurrentTurn`, or `AllTurns`. _(A community contribution, courtesy of [hogeheer499-commits](https://github.com/hogeheer499-commits))_
+
+### Bugs Fixed
+
+- Fixed streaming responses ending early when the service emits an event that the library does not model. The server-sent event enumerator stopped at the first event that produced no updates, so an unrecognized event in the middle of a stream silently terminated the whole stream and looked like a clean, early completion. Unrecognized events are now skipped and every later update still surfaces. This affects all streaming APIs, including `OpenAI.Assistants`, `OpenAI.Chat`, `OpenAI.Responses`, and `OpenAI.Audio`, on both the synchronous and asynchronous paths. _(A community contribution, courtesy of [adityasingh2400](https://github.com/adityasingh2400))_
+- Reduced memory pressure when creating binary-backed image and file content. Base64 data URIs now use a single string allocation on modern target frameworks, and computer screenshot output uses the shared encoding path.
+
+### Other Changes
+
+- OpenAI.Realtime:
+  - Updated the function-calling example to parse and validate model-provided arguments before invoking the local function. _(A community contribution, courtesy of [Rohan5commit](https://github.com/Rohan5commit))_
+
+## 2.13.0 (2026-08-10)
+
+### Acknowledgments
+
+Thank you to our developer community members who helped to make the OpenAI client library better with their contributions to this release:
+
+- [@fallintoplace](https://github.com/fallintoplace)
+- [@hogeheer499](https://github.com/hogeheer499)
+
+### Features Added
+
+- Requests now include structured SDK platform metadata headers (`X-Stainless-Lang`, `X-Stainless-Package-Version`, `X-Stainless-Runtime`, `X-Stainless-Runtime-Version`, `X-Stainless-OS`, and `X-Stainless-Arch`), bringing the .NET library to parity with the other official OpenAI SDKs. These restate information already present in the `User-Agent` header in a machine-parseable form, plus the process CPU architecture, so consumers no longer need to parse the user agent string. Any value you set yourself is preserved. The `User-Agent` header itself is unchanged.
+- Added an opt-out for SDK telemetry, via the `OpenAI.DisableTelemetry` `AppContext` switch or the `OPENAI_DISABLE_TELEMETRY` environment variable. When enabled, the library sends neither the `X-Stainless-*` headers nor the `User-Agent` header that it would otherwise add. See [Telemetry and privacy](https://github.com/openai/openai-dotnet/blob/main/docs/Observability.md#telemetry-and-privacy) for details.
+
+### Bugs Fixed
+
+- OpenAI.Chat:
+  - Fixed an issue where creating Base64 data URIs from large image and file payloads could cause unnecessary memory pressure by copying the entire payload before encoding.
+- OpenAI.Conversations:
+  - Fixed an issue where multiple `include` values on conversation item list, create, and retrieve requests were incorrectly serialized as a single comma-delimited query value instead of repeated `include[]` parameters, causing requests to fail with HTTP 400 responses.
+- OpenAI.Responses:
+  - Fixed an issue where the `Kind` property of `ResponseContentPart` could not be set correctly.
+  - Fixed an issue where creating Base64 data URIs from large image and file payloads could cause unnecessary memory pressure by copying the entire payload before encoding.
+  - Fixed an issue where `Patch` would not propagate correctly through the `McpToolCallApprovalPolicy` and `CodeInterpreterToolContainer` types.
+
+### Other Changes
+
+- Relaxed the limit on `UserAgentApplicationId` from 24 characters to 512. Application identifiers up to that length are now accepted and passed through to the `User-Agent` header verbatim; longer values throw `ArgumentOutOfRangeException` when a client is created, so that the header cannot be inflated without bound. The identifier is ignored, and the limit not applied, when telemetry is disabled and no `User-Agent` will be sent.
+- OpenAI.Responses:
+  - Consolidated the experimental diagnostic used by the Computer Use tool types onto the standard `OPENAI001`. These types were previously marked with a dedicated `OPENAICUA001` code, which has been removed. Consumers who explicitly suppressed `OPENAICUA001` should suppress `OPENAI001` instead (the same code already used by the other experimental Responses APIs).
+
+## 2.12.0 (2026-06-30)
+
+### Acknowledgments
+
+Thank you to our developer community members who helped to make the OpenAI client library better with their contributions to this release:
+
+- [@thejesh23](https://github.com/thejesh23)
+- [@bymle](https://github.com/bymle)
+
+### Features Added
+
+- OpenAI.Containers:
+  - Added support for network policies.
+    - Added the `ContainerNetworkPolicy` type with the following derived types:
+      - `ContainerAllowlistNetworkPolicy`
+      - `ContainerDisabledNetworkPolicy`
+    - Added the `ContainerNetworkPolicyKind` extensible enum.
+    - Added the `ContainerNetworkPolicyDomainSecret` type.
+    - Added the `NetworkPolicy` property to `ContainerCreationOptions`.
+  - Added support for memory limits for containers.
+    - Added the `ContainerMemoryLimit` extensible enum.
+    - Added the `MemoryLimit` property to `ContainerCreationOptions`.
+  - Added support for listing containers filtered by name.
+    - Added the `Name` property to `ContainerCollectionOptions`.
+- OpenAI.Conversations:
+  - Added new conveniences to the `ConversationClient`:
+    - Added the `ConversationCreationOptions` type.
+    - Added the `ConversationUpdateOptions` type.
+    - Added the `ConversationDeletionResult` type.
+    - Added the `ConversationResource` type.
+    - Added new convenience methods to the `ConversationClient`:
+      - `CreateConversation` and `CreateConversationAsync`
+      - `DeleteConversation` and `DeleteConversationAsync`
+      - `GetConversation` and `GetConversationAsync`
+      - `UpdateConversation` and `UpdateConversationAsync`
+- OpenAI.Responses:
+  - Added support for cache keys and cache retention policies, used by OpenAI to cache responses for similar requests in order to optimize your cache hit rates.
+    - Added the `ResponsePromptCacheRetentionPolicy` extensible enum.
+    - Added the `PromptCacheKey` and `PromptCacheRetentionPolicy` properties to `CreateResponseOptions`.
+    - Added the `PromptCacheKey` and `PromptCacheRetentionPolicy` properties to `ResponseResult`.
+
+### Bugs Fixed
+
+- OpenAI.Chat:
+  - Fixed `ChatMessageContentPart.CreateImagePart(Uri)` incorrectly serializing `image_url.url` via `Uri.ToString()`, which would unescape percent-encoded characters (e.g., `%20` → space) and break downstream image fetches. The serialized URL now uses `Uri.AbsoluteUri` to preserve percent-encoding.
+
+### Other Changes
+
+- Updated the `System.ClientModel` dependency to version 1.14.0. For more information, see the [System.ClientModel changelog](https://github.com/Azure/azure-sdk-for-net/blob/System.ClientModel_1.14.0/sdk/core/System.ClientModel/CHANGELOG.md).
+
+### Breaking Changes in Experimental APIs
+
+- OpenAI.Containers:
+  - Renamed the following classes for consistency:
+    - Renamed `DeleteContainerResponse` to `ContainerDeletionResult`.
+    - Renamed `DeleteContainerFileResponse` to `ContainerFileDeletionResult`.
+    - Renamed `ContainerResourceExpiresAfter` to `ContainerExpirationPolicy`.
+    - Renamed `CreateContainerBody` to `ContainerCreationOptions`.
+  - Renamed the following properties for consistency:
+    - Renamed the `Minutes` property of `ContainerExpirationPolicy` to `Duration`.
+    - Renamed the `Id` property of `ContainerDeletionResult` to `ContainerId`.
+    - Renamed the `Id` property of `ContainerFileDeletionResult` to `ContainerFileId`.
+    - Renamed the `ExpiresAfter` property of `ContainerResource` to `ExpirationPolicy`.
+  - Changed the type of the `Anchor` property of `ContainerExpirationPolicy` from `string` to `ContainerExpirationPolicyAnchor?`.
+  - Changed the type of the `Duration` property of `ContainerExpirationPolicy` from `int` to `TimeSpan?`.
+  - Changed the type of the `ExpiresAfter` property of `ContainerResource` from `ContainerResourceExpiresAfter` to `ContainerExpirationPolicy`.
+  - Removed the `ContainerResourceExpiresAfter` class.
+- OpenAI.Conversations:
+  - Made the `options` parameter of type `RequestOptions` required for several methods in the `ConversationClient` in order to disambiguate the new overloads.
+
+## 2.11.0 (2026-06-05)
+
+### Acknowledgments
+
+Thank you to our developer community members who helped to make the OpenAI client library better with their contributions to this release:
+
+- [@Rohan5commit](https://github.com/Rohan5commit)
+- [@kiwigitops](https://github.com/kiwigitops)
+- [@yucheng-fu](https://github.com/yucheng-fu)
+- [@arpitjain099](https://github.com/arpitjain099)
+- [@adityasingh2400](https://github.com/adityasingh2400)
+
+### Features Added
+
+- OpenAI.Chat:
+  - Added support for specifying high-level guidance regarding the context window size to use during a web search.
+    - Added the `ChatWebSearchContextSize` extensible enum.
+    - Added the `SearchContextSize` property to `ChatWebSearchOptions`.
+- OpenAI.Skills:
+  - Added support for managing reusable, versioned agent skills.
+    - Introduced the new `SkillClient` with the following methods:
+      - `UploadSkill` and `UploadSkillAsync`
+      - `UpdateSkill` and `UpdateSkillAsync`
+      - `GetSkill` and `GetSkillAsync`
+      - `GetSkills` and `GetSkillsAsync`
+      - `DownloadSkill` and `DownloadSkillAsync`
+      - `DeleteSkill` and `DeleteSkillAsync`
+      - `UploadSkillVersion` and `UploadSkillVersionAsync`
+      - `GetSkillVersion` and `GetSkillVersionAsync`
+      - `GetSkillVersions` and `GetSkillVersionsAsync`
+      - `DownloadSkillVersion` and `DownloadSkillVersionAsync`
+      - `DeleteSkillVersion` and `DeleteSkillVersionAsync`
+- OpenAI.Responses:
+  - Added support for retrieving the log probabilities of output tokens.
+    - Added the `ResponseTokenLogProbabilityDetails` type.
+    - Added the `ResponseTokenTopLogProbabilityDetails` type.
+    - Added the `OutputTextTokenLogProbabilities` property to `ResponseContentPart`.
+    - Added the `TokenLogProbabilities` property to `StreamingResponseOutputTextDeltaUpdate`.
+    - Added the `TokenLogProbabilities` property to `StreamingResponseOutputTextDoneUpdate`.
+  - Added support for retrieving the function name in applicable function call argument streaming events.
+    - Added `FunctionName` property to `StreamingResponseFunctionCallArgumentsDoneUpdate`.
+  - Added extensibility to the `ResponseItem` class hierarchy.
+    - Added the `ResponseItemKind` extensible enum.
+    - Added the `Kind` property to `ResponseItem`.
+    - Added a protected constructor to `ResponseItem` that takes a `ResponseItemKind` parameter.
+  - Added extensibility to the `ResponseTool` class hierarchy.
+    - Added the `ResponseToolKind` extensible Enum.
+    - Added the `Kind` property to `ResponseTool`.
+    - Added a protected constructor to `ResponseTool` that takes a `ResponseToolKind` parameter.
+  - Added extensibility to the `StreamingResponseUpdate` class hierarchy.
+    - Added the `StreamingResponseUpdateKind` extensible enum.
+    - Added the `Kind` property to `StreamingResponseUpdate`.
+    - Added a protected constructor to `StreamingResponseUpdate` that takes a `StreamingResponseUpdateKind` parameter.
+
+### Bugs Fixed
+
+- OpenAI.Assistants:
+  - Fixed a `NullReferenceException` when a streaming response delivered an unmodeled `error` event. The SSE `error` frame is now surfaced as a `ClientResultException` so the failure is observable, while the unknown-event path stays covered.
+- OpenAI.Files:
+  - Fixed an issue where the `UploadFile` and `UploadFileAsync` method overloads in `OpenAIFileClient` that take a `filePath` were incorrectly using the entire path as the filename.
+- OpenAI.Realtime:
+  - Fixed an issue where the `AudioEndTime` property of `RealtimeClientCommandConversationItemTruncate` was incorrectly serialized as a float instead of an integer.
+
+### Breaking Changes in Experimental APIs
+
+- OpenAI.Audio:
+  - Changed the type of the `KnownSpeakerReferenceUris` property of `AudioTranscriptionOptions` from `IList<Uri>` to `IList<string>`.
+- OpenAI.Containers:
+  - Renamed the `CreateContainerFile` and `CreateContainerFileAsync` methods of `ContainerClient` to `UploadContainerFile` and `UploadContainerFileAsync`.
+  - Changed the type of the `Order` property of `ContainerFileCollectionOptions` from `ContainerCollectionOrder?` to `ContainerFileCollectionOrder?`.
+- OpenAI.Realtime:
+  - Changed the type of the `Options` property of `RealtimeClientSettings` from `OpenAIClientOptions` to `RealtimeClientOptions`.
+- OpenAI.Responses:
+  - Moved the `AddResponsesClient` and `AddKeyedResponsesClient` `IHostApplicationBuilder` extension methods under the `OpenAI.Responses` namespace.
+  - Removed the `action` and `background` parameters from the constructor of `ImageGenerationCallResponseItem`.
+  - Removed the `ImageGenToolCallBackground` type in favor of `ImageGenerationToolBackground`.
+  - Removed the `ImageGenToolCallOutputFormat` type in favor of `ImageGenerationToolOutputFileFormat`.
+  - Removed the `ImageGenToolCallQuality` type in favor of `ImageGenerationToolQuality`.
+  - Removed the `ImageGenToolCallSize` type in favor of `ImageGenerationToolSize`.
+  - Changed the type of the `Action` property of `ImageGenerationCallResponseItem` from `ImageGenerationToolAction` to `ImageGenerationToolAction?`.
+  - Changed the type of the `Background` property of `ImageGenerationCallResponseItem` from `ImageGenToolCallBackground` to `ImageGenerationToolBackground?`.
+  - Changed the type of the `OutputFormat` property of `ImageGenerationCallResponseItem` from `ImageGenToolCallOutputFormat` to `ImageGenerationToolOutputFileFormat?`.
+  - Changed the type of the `Quality` property of `ImageGenerationCallResponseItem` from `ImageGenToolCallQuality` to `ImageGenerationToolQuality?`.
+  - Changed the type of the `Size` property of `ImageGenerationCallResponseItem` from `ImageGenToolCallSize` to `ImageGenerationToolSize?`.
+  - Renamed the `OutputFormat` property of `ImageGenerationCallResponseItem` to `OutputFileFormat`.
+  - Changed the type of the `Options` property of `ResponsesClientSettings` from `OpenAIClientOptions` to `ResponsesClientOptions`.
+  - Changed the type of the `options` parameters in the constructors of `ResponsesClient` from `OpenAIClientOptions` to `ResponsesClientOptions`.
+  - Reordered the parameters of the following methods of the `ResponsesClient` for consistency:
+    - `CompactResponse` and `CompactResponseAsync`
+    - `GetInputTokenCount` and `GetInputTokenCountAsync`
+  - Renamed `StreamingResponseTextAnnotationAddedUpdate` to `StreamingResponseOutputTextAnnotationAddedUpdate`.
+
 ## 2.10.0 (2026-04-03)
 
 ### Features Added

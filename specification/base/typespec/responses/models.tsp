@@ -1,8 +1,3 @@
-/*
- * This file was automatically generated from an OpenAPI .yaml file.
- * Edits made directly to this file will be lost.
- */
-
 import "@azure-tools/typespec-client-generator-core";
 
 using Azure.ClientGenerator.Core;
@@ -16,16 +11,25 @@ namespace OpenAI;
   
   Constrains effort on reasoning for
   [reasoning models](https://platform.openai.com/docs/guides/reasoning).
-  Currently supported values are `none`, `minimal`, `low`, `medium`, and `high`. Reducing
+  Currently supported values are `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, and `max`. Reducing
   reasoning effort can result in faster responses and fewer tokens used
   on reasoning in a response.
   """)
 union ResponsesReasoningEffort {
-  "none",
-  "minimal",
-  "low",
-  "medium",
-  "high",
+  none: "none",
+  minimal: "minimal",
+  low: "low",
+  medium: "medium",
+  high: "high",
+  xhigh: "xhigh",
+  max: "max"
+}
+
+/** Controls how much reasoning context is preserved across turns. */
+union ResponsesReasoningContext {
+  "auto",
+  "current_turn",
+  "all_turns",
 }
 
 union ResponsesCompoundFilterType {
@@ -193,6 +197,17 @@ model CreateResponse {
    *  Items from this conversation are prepended to input_items for this response request.
    *  Input items and output items from this response are automatically added to this conversation after this response completes. */
   conversation?: ConversationParam | null;
+
+  /** Used by OpenAI to cache responses for similar requests to optimize your cache hit rates. Replaces the `user` field. [Learn more](/docs/guides/prompt-caching). */
+  prompt_cache_key?: string;
+
+  prompt_cache_retention?: PromptCacheRetention;
+}
+
+union PromptCacheRetention {
+  string,
+  in_memory: "in_memory",
+  `24h`: "24h",
 }
 
 /**The conversation that this response belongs to. Items from this conversation are prepended to `input_items` for this response request.
@@ -320,6 +335,11 @@ model Response {
 
   /** The conversation that this response belongs to. Input items and output items from this response are automatically added to this conversation. */
   conversation?: `ConversationParam-2` | null;
+
+  /** Used by OpenAI to cache responses for similar requests to optimize your cache hit rates. Replaces the `user` field. [Learn more](/docs/guides/prompt-caching). */
+  prompt_cache_key?: string;
+
+  prompt_cache_retention?: PromptCacheRetention;
 }
 
 model ResponseProperties {
@@ -478,17 +498,23 @@ union ModelIdsResponses {
 /** A tool that can be used to generate a response. */
 union ToolType {
   string,
-  file_search: "file_search",
   function: "function",
+  file_search: "file_search",
+  computer: "computer",
   computer_use_preview: "computer_use_preview",
   web_search: "web_search",
-  web_search_preview: "web_search_preview",
   mcp: "mcp",
   code_interpreter: "code_interpreter",
   image_generation: "image_generation",
   local_shell: "local_shell",
+  shell: "shell",
+  custom: "custom",
+  `namespace`: "namespace",
+  tool_search: "tool_search",
+  web_search_preview: "web_search_preview",
   apply_patch: "apply_patch",
 }
+
 @discriminator("type")
 model Tool {
   type: ToolType;
@@ -692,6 +718,9 @@ model ApproximateLocation extends Location {
  */
 model Reasoning {
   effort?: ResponsesReasoningEffort | null = "medium";
+
+  /** Controls how much reasoning context is preserved across turns. */
+  context?: ResponsesReasoningContext | null;
 
   @doc("""
     A summary of the reasoning performed by the model. This can be
@@ -1174,27 +1203,29 @@ union ImageGenerationSize {
 }
 
 /** The output format for a generated image. */
-enum ImageGenerationOutputFormat {
+union ImageGenerationOutputFormat {
+  string,
   /** PNG format. */
-  png,
+  png: "png",
 
   /** WebP format. */
-  webp,
+  webp: "webp",
 
   /** JPEG format. */
-  jpeg,
+  jpeg: "jpeg",
 }
 
 /** The background type for a generated image. */
-enum ImageGenerationBackground {
+union ImageGenerationBackground {
+  string,
   /** Transparent background. */
-  transparent,
+  transparent: "transparent",
 
   /** Opaque background. */
-  opaque,
+  opaque: "opaque",
 
   /** Automatically select the best background for the image. */
-  auto,
+  auto: "auto",
 }
 
 // Tool customization (apply_discriminator): Apply discriminated type base for tools
@@ -1498,11 +1529,10 @@ union Verbosity {
 
 #suppress "@azure-tools/typespec-azure-core/no-enum" "Auto-suppressed warnings non-applicable rules during import."
 #suppress "@azure-tools/typespec-azure-core/documentation-required" "Auto-suppressed warnings non-applicable rules during import."
-enum TruncationEnum {
-  #suppress "@azure-tools/typespec-azure-core/documentation-required" "Auto-suppressed warnings non-applicable rules during import."
-  auto,
-  #suppress "@azure-tools/typespec-azure-core/documentation-required" "Auto-suppressed warnings non-applicable rules during import."
-  disabled,
+union TruncationEnum {
+  string,
+  auto: "auto",
+  disabled: "disabled",
 }
 
 #suppress "@azure-tools/typespec-azure-core/documentation-required" "Auto-suppressed warnings non-applicable rules during import."

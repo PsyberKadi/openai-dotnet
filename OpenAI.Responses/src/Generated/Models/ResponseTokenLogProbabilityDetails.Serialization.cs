@@ -7,6 +7,7 @@ using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using OpenAI;
 
 namespace OpenAI.Responses
 {
@@ -37,7 +38,7 @@ namespace OpenAI.Responses
             switch (format)
             {
                 case "J":
-                    return ModelReaderWriter.Write(this, options, OpenAIResponsesContext.Default);
+                    return ModelReaderWriter.Write(this, options, OpenAIContext.Default);
                 default:
                     throw new FormatException($"The model {nameof(ResponseTokenLogProbabilityDetails)} does not support writing '{options.Format}' format.");
             }
@@ -87,7 +88,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.bytes"u8))
                 {
                     writer.WritePropertyName("bytes"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.bytes"u8));
+                    Patch.WriteTo(writer, "$.bytes"u8);
                 }
             }
             else
@@ -110,7 +111,7 @@ namespace OpenAI.Responses
                 if (!Patch.IsRemoved("$.top_logprobs"u8))
                 {
                     writer.WritePropertyName("top_logprobs"u8);
-                    writer.WriteRawValue(Patch.GetJson("$.top_logprobs"u8));
+                    Patch.WriteTo(writer, "$.top_logprobs"u8);
                 }
             }
             else
@@ -212,6 +213,10 @@ namespace OpenAI.Responses
             {
                 int propertyLength = "top_logprobs"u8.Length;
                 ReadOnlySpan<byte> currentSlice = local.Slice(propertyLength);
+                if (currentSlice.IsEmpty)
+                {
+                    return TryResolveTopLogProbabilitiesArray(out value);
+                }
                 if (!currentSlice.TryGetIndex(out int index, out int bytesConsumed))
                 {
                     return false;
@@ -239,6 +244,34 @@ namespace OpenAI.Responses
                 return true;
             }
             return false;
+        }
+#pragma warning restore SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+
+#pragma warning disable SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+        private bool TryResolveTopLogProbabilitiesArray(out JsonPatch.EncodedValue value)
+        {
+            value = default;
+            BinaryData data = ModelReaderWriter.Write(ActiveTopLogProbabilities(), ModelReaderWriterOptions.Json, OpenAIContext.Default);
+            JsonPatch tempPatch = new JsonPatch();
+            tempPatch.Set("$"u8, data.ToMemory().Span);
+            return tempPatch.TryGetEncodedValue("$"u8, out value);
+        }
+#pragma warning restore SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+
+#pragma warning disable SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+        private IEnumerable<ResponseTokenTopLogProbabilityDetails> ActiveTopLogProbabilities()
+        {
+            if (!Optional.IsCollectionDefined(TopLogProbabilities))
+            {
+                yield break;
+            }
+            for (int i = 0; i < TopLogProbabilities.Count; i++)
+            {
+                if (!TopLogProbabilities[i].Patch.IsRemoved("$"u8))
+                {
+                    yield return TopLogProbabilities[i];
+                }
+            }
         }
 #pragma warning restore SCME0001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
     }

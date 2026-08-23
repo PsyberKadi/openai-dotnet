@@ -16,41 +16,43 @@ namespace OpenAI.Containers
         private readonly int? _limit;
         private readonly string _order;
         private readonly string _after;
+        private readonly string _name;
         private readonly RequestOptions _options;
 
-        public ContainerClientGetContainersAsyncCollectionResultOfT(ContainerClient client, int? limit, string order, string after, RequestOptions options)
+        public ContainerClientGetContainersAsyncCollectionResultOfT(ContainerClient client, int? limit, string order, string after, string name, RequestOptions options)
         {
             _client = client;
             _limit = limit;
             _order = order;
             _after = after;
+            _name = name;
             _options = options;
         }
 
         public override async IAsyncEnumerable<ClientResult> GetRawPagesAsync()
         {
-            PipelineMessage message = _client.CreateGetContainersRequest(_limit, _order, _after, _options);
+            PipelineMessage message = _client.CreateGetContainersRequest(_limit, _order, _after, _name, _options);
             string nextToken = null;
             while (true)
             {
-                ClientResult result = ClientResult.FromResponse(await _client.Pipeline.ProcessMessageAsync(message, _options).ConfigureAwait(false));
+                ClientResult result = await GetNextResponseAsync(message).ConfigureAwait(false);
                 yield return result;
 
                 // Plugin customization: add hasMore assignment
-                bool hasMore = ((InternalContainerListResource)result).HasMore;
-                nextToken = ((InternalContainerListResource)result).LastId;
+                bool hasMore = ((ContainerCollectionPage)result).HasMore;
+                nextToken = ((ContainerCollectionPage)result).LastId;
                 // Plugin customization: add hasMore == false check to pagination condition
                 if (string.IsNullOrEmpty(nextToken) || !hasMore)
                 {
                     yield break;
                 }
-                message = _client.CreateGetContainersRequest(_limit, _order, nextToken, _options);
+                message = _client.CreateGetContainersRequest(_limit, _order, nextToken, _name, _options);
             }
         }
 
         public override ContinuationToken GetContinuationToken(ClientResult page)
         {
-            string nextPage = ((InternalContainerListResource)page).LastId;
+            string nextPage = ((ContainerCollectionPage)page).LastId;
             if (!string.IsNullOrEmpty(nextPage))
             {
                 return ContinuationToken.FromBytes(BinaryData.FromString(nextPage));
@@ -63,11 +65,16 @@ namespace OpenAI.Containers
 
         protected override async IAsyncEnumerable<ContainerResource> GetValuesFromPageAsync(ClientResult page)
         {
-            foreach (ContainerResource item in ((InternalContainerListResource)page).Data)
+            foreach (ContainerResource item in ((ContainerCollectionPage)page).Data)
             {
                 yield return item;
                 await Task.Yield();
             }
+        }
+
+        private async ValueTask<ClientResult> GetNextResponseAsync(PipelineMessage message)
+        {
+            return ClientResult.FromResponse(await _client.Pipeline.ProcessMessageAsync(message, _options).ConfigureAwait(false));
         }
     }
 }
